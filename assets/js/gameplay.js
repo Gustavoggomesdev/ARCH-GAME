@@ -18,7 +18,7 @@ const state = {
   currentEvent: null,
   eventTimer: null,
   eventTimerPct: 1,
-  eventTimerDuration: 20000,
+  eventTimerDuration: 25000,
   eventQueue: [],
   playerX: 80,
   playerFrame: 0,
@@ -87,6 +87,15 @@ function renderCharacterSelect() {
   state.characterId = currentValue;
 }
 
+function getCharacterName(characterId = state.characterId) {
+  const profile = CHARACTER_PROFILES[characterId] || CHARACTER_PROFILES[DEFAULT_CHARACTER];
+  return profile.fixedName || profile.label;
+}
+
+function normalizePlayerName() {
+  return (document.getElementById('menuNameInput')?.value.trim().toUpperCase() || 'JOGADOR').slice(0, 12);
+}
+
 function persistSelectedCharacter(characterId) {
   const progress = getProgress();
   if (!progress.unlocked.includes(characterId)) return;
@@ -109,10 +118,6 @@ function tryUnlockNextCharacter() {
   notify(`🔓 Novo personagem: ${unlockedProfile.label}!`);
 }
 
-function normalizePlayerName() {
-  return (document.getElementById('menuNameInput').value.trim().toUpperCase() || 'JOGADOR').slice(0, 12);
-}
-
 function normalizeCharacterId() {
   const selectedId = document.getElementById('menuCharacterSelect')?.value || state.characterId || DEFAULT_CHARACTER;
   return CHARACTER_PROFILES[selectedId] ? selectedId : DEFAULT_CHARACTER;
@@ -120,10 +125,11 @@ function normalizeCharacterId() {
 
 function buildIntroStory() {
   const profile = CHARACTER_PROFILES[state.characterId] || CHARACTER_PROFILES[DEFAULT_CHARACTER];
+  const characterName = getCharacterName();
   const openers = [
-    `${profile.icon} ${playerName} acordou cedo, com o dia ainda cinza sobre os prédios da cidade.`,
-    `${profile.icon} ${playerName} saiu antes do sol abrir direito e já encontrou o ritmo duro da rua.`,
-    `${profile.icon} No começo da manhã, ${playerName} percebeu que chegar seria mais do que uma questão de tempo.`,
+    `${profile.icon} ${characterName} acordou cedo, com o dia ainda cinza sobre os prédios da cidade.`,
+    `${profile.icon} ${characterName} saiu antes do sol abrir direito e já encontrou o ritmo duro da rua.`,
+    `${profile.icon} No começo da manhã, ${characterName} percebeu que chegar seria mais do que uma questão de tempo.`,
   ];
 
   const endings = [
@@ -137,6 +143,7 @@ function buildIntroStory() {
 
 function buildEndingStory() {
   const profile = CHARACTER_PROFILES[state.characterId] || CHARACTER_PROFILES[DEFAULT_CHARACTER];
+  const characterName = getCharacterName();
   const socialTone = state.social >= 60
     ? 'mesmo cansado, você escolheu olhar para os outros quando era mais fácil ignorar'
     : state.social >= 35
@@ -149,7 +156,7 @@ function buildEndingStory() {
       ? 'Você chegou no limite, mas chegou.'
       : 'Você cruzou a linha final no resto do que tinha.';
 
-  return `${profile.icon} ${playerName} terminou o dia atravessando uma cidade que exige escolhas impossíveis para quem é ${profile.label.toLowerCase()}. No fim, ${socialTone}. ${energyTone}`;
+  return `${profile.icon} ${characterName} terminou o dia atravessando uma cidade que exige escolhas impossíveis para quem é ${profile.label.toLowerCase()}. No fim, ${socialTone}. ${energyTone}`;
 }
 
 function initBg() {
@@ -509,8 +516,6 @@ function startGame() {
 }
 
 function beginJourney() {
-  playerName = playerName || normalizePlayerName();
-
   launchGameRound();
 }
 
@@ -891,8 +896,19 @@ function exposeGlobalActions() {
   window.cancelQuit = cancelQuit;
 }
 
+function bindMenuControls() {
+  const select = document.getElementById('menuCharacterSelect');
+  if (!select) return;
+
+  select.addEventListener('change', () => {
+    state.characterId = normalizeCharacterId();
+    persistSelectedCharacter(state.characterId);
+  });
+}
+
 export function initializeGame() {
   renderCharacterSelect();
+  bindMenuControls();
   initBg();
   bindKeyboard();
   gameLoop();

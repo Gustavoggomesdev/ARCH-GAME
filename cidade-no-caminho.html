@@ -1,0 +1,167 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cidade no Caminho</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gameCanvas" width="800" height="480"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="hud-block">
+      <span class="hud-label">FALTAM</span>
+      <span class="hud-val" id="hudDist">—m</span>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">ENERGIA ❤️</span>
+      <div class="bar" id="energyBar"><div id="energyFill" style="width:100%"></div></div>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">IMPACTO ⚖️</span>
+      <div class="bar" id="socialBar"><div id="socialFill" style="width:20%"></div></div>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">URGÊNCIA ⏳</span>
+      <div class="bar" id="timerBar"><div id="timerFill" style="width:100%"></div></div>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">TEMPO ⏱️</span>
+      <span class="hud-val" id="hudTime">0s</span>
+    </div>
+    <button class="hud-back" onclick="confirmQuit()">✕ SAIR</button>
+  </div>
+
+  <div id="menuScreen" class="screen">
+    <div class="menu-header">
+      <div class="menu-city-icon">🏙️</div>
+      <div class="menu-title">CIDADE NO<br>CAMINHO</div>
+      <div class="menu-sub">dilemas reais de uma cidade imperfeita</div>
+    </div>
+    <div class="menu-name-wrap">
+      <label class="menu-name-label">SEU NOME:</label>
+      <input type="text" id="menuNameInput" maxlength="12" placeholder="JOGADOR" autocomplete="off" />
+    </div>
+    <div class="menu-name-wrap">
+      <label class="menu-name-label">SEU PERFIL:</label>
+      <select id="menuCharacterSelect">
+        <option value="trabalhador">💼 Trabalhador(a)</option>
+        <option value="cadeirante">♿ Pessoa cadeirante</option>
+        <option value="def_visual">🦯 Deficiência visual</option>
+        <option value="mae_solo">👩‍👦 Mãe solo</option>
+      </select>
+    </div>
+    <div class="menu-btns">
+      <button class="btn" onclick="startGame()">▶ JOGAR</button>
+      <button class="btn blue-b" onclick="showRanking()">🏆 RANKING</button>
+    </div>
+    <canvas id="menuCity" width="800" height="90" style="position:absolute;bottom:0;left:0;pointer-events:none"></canvas>
+  </div>
+
+  <div id="introScreen" class="screen hidden">
+    <div class="result-box slide-in intro-box">
+      <div class="result-icon">🌅</div>
+      <div class="result-title">ANTES DE SAIR</div>
+      <div class="intro-story" id="introStory">—</div>
+      <div class="intro-btns">
+        <button class="btn" onclick="beginJourney()">▶ ENFRENTAR O DIA</button>
+        <button class="btn red sm" onclick="showMenu()">↩ VOLTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="eventScreen" class="screen hidden">
+    <div class="event-box slide-in">
+      <button class="btn-back-float" onclick="confirmQuit()">✕</button>
+      <div class="event-top">
+        <div class="event-icon" id="evIcon">🚌</div>
+        <div class="event-title" id="evTitle">TÍTULO</div>
+      </div>
+      <div class="event-desc" id="evDesc">—</div>
+      <div class="event-dilema" id="evDilema">—</div>
+      <div class="event-timer-wrap">
+        <div class="event-timer-label">
+          <span>DECIDA AGORA</span>
+          <span id="evTimerSecs" class="blink">3s</span>
+        </div>
+        <div id="eventTimerBar"><div id="eventTimerFill"></div></div>
+      </div>
+      <div class="event-choices" id="evChoices"></div>
+    </div>
+  </div>
+
+  <div id="resultScreen" class="screen hidden">
+    <div class="result-box slide-in">
+      <div class="result-icon" id="resIcon">💭</div>
+      <div class="result-title" id="resTitle">—</div>
+      <div class="result-msg" id="resMsg">—</div>
+      <div class="result-effects" id="resEffects"></div>
+      <div class="result-tension" id="resTension"></div>
+      <div class="result-fact" id="resFact"></div>
+      <div class="result-btns">
+        <button class="btn" onclick="continueGame()">▶ CONTINUAR</button>
+        <button class="btn red sm" onclick="confirmQuit()">↩ SAIR</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="endScreen" class="screen hidden">
+    <div class="end-box slide-in">
+      <div class="end-title">🏁 VOCÊ CHEGOU!</div>
+      <div class="end-quote" id="endQuote">—</div>
+      <div class="end-story" id="endStory">—</div>
+      <div class="end-stats">
+        <div class="stat-card"><span class="stat-icon">⏱️</span><span class="stat-val" id="statTime">—</span><span class="stat-lbl">TEMPO</span></div>
+        <div class="stat-card"><span class="stat-icon">❤️</span><span class="stat-val" id="statEnergy">—</span><span class="stat-lbl">ENERGIA</span></div>
+        <div class="stat-card"><span class="stat-icon">🏅</span><span class="stat-val" id="statScore">—</span><span class="stat-lbl">PONTOS</span></div>
+      </div>
+      <div class="end-btns">
+        <button class="btn" onclick="saveAndRanking()">💾 SALVAR</button>
+        <button class="btn blue-b sm" onclick="restartGame()">↺ NOVA PARTIDA</button>
+        <button class="btn red sm" onclick="showMenu()">↩ MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameOverScreen" class="screen hidden">
+    <div class="gameover-box slide-in">
+      <div class="gameover-title">💀 ESGOTADO</div>
+      <div class="gameover-msg" id="gameOverMsg">A cidade te desgastou.</div>
+      <div class="end-stats" style="width:100%">
+        <div class="stat-card"><span class="stat-icon">⏱️</span><span class="stat-val" id="goTime">—</span><span class="stat-lbl">DUROU</span></div>
+        <div class="stat-card"><span class="stat-icon">📍</span><span class="stat-val" id="goDist">—</span><span class="stat-lbl">DO CAMINHO</span></div>
+        <div class="stat-card"><span class="stat-icon">⚖️</span><span class="stat-val" id="goSocial">—</span><span class="stat-lbl">IMPACTO</span></div>
+      </div>
+      <div class="end-btns">
+        <button class="btn" onclick="restartGame()">↺ TENTAR DE NOVO</button>
+        <button class="btn red sm" onclick="showMenu()">↩ MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rankingScreen" class="screen hidden">
+    <div class="ranking-box slide-in">
+      <div class="ranking-title">🏆 RANKING</div>
+      <div class="rank-list" id="rankList"></div>
+      <button class="btn red sm" onclick="showMenu()">↩ VOLTAR</button>
+    </div>
+  </div>
+
+  <div id="confirmDialog" class="hidden">
+    <div class="confirm-box">
+      <div class="confirm-msg">Abandonar a partida?<br>O progresso se perde.</div>
+      <div class="confirm-btns">
+        <button class="btn red sm" onclick="doQuit()">SIM</button>
+        <button class="btn sm" onclick="cancelQuit()">NÃO</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification"></div>
+</div>
+
+<script type="module" src="assets/js/main.js"></script>
+</body>
+</html>

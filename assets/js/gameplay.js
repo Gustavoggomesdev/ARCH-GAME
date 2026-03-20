@@ -1,4 +1,4 @@
-import { EVENTS } from './data/events.js';
+import { CHARACTER_PROFILES, DEFAULT_CHARACTER, getEventsForCharacter } from './data/events.js';
 
 const state = {
   phase: 'menu',
@@ -20,6 +20,7 @@ const state = {
   nextEventAt: 80,
   scoreSaved: false,
   totalScore: 0,
+  characterId: DEFAULT_CHARACTER,
 };
 
 let startTime = 0;
@@ -39,23 +40,30 @@ function normalizePlayerName() {
   return (document.getElementById('menuNameInput').value.trim().toUpperCase() || 'JOGADOR').slice(0, 12);
 }
 
+function normalizeCharacterId() {
+  const selectedId = document.getElementById('menuCharacterSelect')?.value || DEFAULT_CHARACTER;
+  return CHARACTER_PROFILES[selectedId] ? selectedId : DEFAULT_CHARACTER;
+}
+
 function buildIntroStory() {
+  const profile = CHARACTER_PROFILES[state.characterId] || CHARACTER_PROFILES[DEFAULT_CHARACTER];
   const openers = [
-    `${playerName} acordou cedo, com o dia ainda cinza sobre os prédios da cidade.`,
-    `Com o primeiro ônibus já lotado, ${playerName} percebeu que hoje seria uma maratona urbana.`,
-    `${playerName} saiu de casa com pressa, mas a cidade nunca anda no mesmo ritmo de quem precisa dela.`,
+    `${profile.icon} ${playerName} acordou cedo, com o dia ainda cinza sobre os prédios da cidade.`,
+    `${profile.icon} ${playerName} saiu antes do sol abrir direito e já encontrou o ritmo duro da rua.`,
+    `${profile.icon} No começo da manhã, ${playerName} percebeu que chegar seria mais do que uma questão de tempo.`,
   ];
 
   const endings = [
-    'No caminho para o trabalho, cada decisão pode custar tempo, energia ou consciência.',
-    'Até chegar ao destino, cada escolha vai deixar uma marca no corpo e na forma de ver o mundo.',
-    'O trajeto de hoje não é só distância: é uma coleção de dilemas que não cabem em respostas fáceis.',
+    `${profile.intro} Cada decisão pode custar tempo, energia ou autonomia.`,
+    'Até chegar ao destino, cada escolha deixa marca no corpo e na forma de ver a cidade.',
+    'O trajeto de hoje não é só distância: é uma sequência de dilemas sem resposta perfeita.',
   ];
 
   return `${openers[Math.floor(Math.random() * openers.length)]} ${endings[Math.floor(Math.random() * endings.length)]}`;
 }
 
 function buildEndingStory() {
+  const profile = CHARACTER_PROFILES[state.characterId] || CHARACTER_PROFILES[DEFAULT_CHARACTER];
   const socialTone = state.social >= 60
     ? 'mesmo cansado, você escolheu olhar para os outros quando era mais fácil ignorar'
     : state.social >= 35
@@ -68,7 +76,7 @@ function buildEndingStory() {
       ? 'Você chegou no limite, mas chegou.'
       : 'Você cruzou a linha final no resto do que tinha.';
 
-  return `${playerName} terminou o dia atravessando uma cidade que exige escolhas impossíveis. No fim, ${socialTone}. ${energyTone}`;
+  return `${profile.icon} ${playerName} terminou o dia atravessando uma cidade que exige escolhas impossíveis para quem é ${profile.label.toLowerCase()}. No fim, ${socialTone}. ${energyTone}`;
 }
 
 function initBg() {
@@ -415,6 +423,7 @@ function showMenu() {
 
 function startGame() {
   playerName = normalizePlayerName();
+  state.characterId = normalizeCharacterId();
   state.phase = 'intro';
   state.running = false;
 
@@ -450,7 +459,7 @@ function launchGameRound() {
 
   bgOffset = 0;
   particles = [];
-  state.eventQueue = [...EVENTS].sort(() => Math.random() - 0.5);
+  state.eventQueue = getEventsForCharacter(state.characterId).sort(() => Math.random() - 0.5);
   state.nextEventAt = 55 + Math.random() * 30;
   startTime = Date.now();
 
@@ -491,7 +500,7 @@ function triggerNextEvent() {
 
   state.eventTimerPct = 1;
   const start = Date.now();
-  const dur = state.eventTimerDuration;
+  const dur = ev.duration || state.eventTimerDuration;
 
   if (state.eventTimer) clearInterval(state.eventTimer);
   state.eventTimer = setInterval(() => {

@@ -1,4 +1,5 @@
 export const DEFAULT_CHARACTER = 'trabalhador';
+export const CHARACTER_ORDER = ['trabalhador', 'cadeirante', 'def_visual', 'mae_solo'];
 
 export const CHARACTER_PROFILES = {
   trabalhador: {
@@ -6,24 +7,28 @@ export const CHARACTER_PROFILES = {
     label: 'Trabalhador(a)',
     icon: '💼',
     intro: 'Acorda cedo e cruza a cidade para manter a rotina em pé.',
+    difficulty: { startEnergy: 100, totalDist: 500, socialBonus: 0, scoreMultiplier: 1 },
   },
   cadeirante: {
     id: 'cadeirante',
     label: 'Pessoa cadeirante',
     icon: '♿',
     intro: 'Cada quarteirão exige planejamento, força e muita paciência.',
+    difficulty: { startEnergy: 92, totalDist: 540, socialBonus: 2, scoreMultiplier: 1.05 },
   },
   def_visual: {
     id: 'def_visual',
     label: 'Pessoa com deficiência visual',
     icon: '🦯',
     intro: 'A cidade sonora guia passos, mas nem sempre respeita autonomia.',
+    difficulty: { startEnergy: 94, totalDist: 535, socialBonus: 2, scoreMultiplier: 1.06 },
   },
   mae_solo: {
     id: 'mae_solo',
     label: 'Mãe solo',
     icon: '👩‍👦',
     intro: 'Entre trabalho e cuidado, o relógio vira mais um desafio diário.',
+    difficulty: { startEnergy: 90, totalDist: 545, socialBonus: 3, scoreMultiplier: 1.08 },
   },
 };
 
@@ -765,7 +770,9 @@ const CHARACTER_EVENTS = {
 
 export function getEventsForCharacter(characterId = DEFAULT_CHARACTER) {
   const profileEvents = CHARACTER_EVENTS[characterId] || [];
-  const pool = [...COMMON_EVENTS, ...profileEvents];
+  const pool = profileEvents.length > 0
+    ? [profileEvents[0], ...COMMON_EVENTS, ...profileEvents.slice(1)]
+    : [...COMMON_EVENTS];
 
   return pool.map((event) => ({
     ...event,

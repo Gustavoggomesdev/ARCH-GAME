@@ -29,6 +29,7 @@ const state = {
   totalScore: 0,
   characterId: DEFAULT_CHARACTER,
   eventGap: 60,
+  ridingBus: false,
 };
 
 let startTime = 0;
@@ -319,6 +320,81 @@ function drawDestination() {
   ctx.fill();
 }
 
+function drawBusWheel(ox, oy, r, framePhase) {
+  const cx = ox + r / 2;
+  const cy = oy + r / 2;
+  ctx.fillStyle = '#222';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#555';
+  ctx.beginPath();
+  ctx.arc(cx, cy, r / 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 1;
+  const angle = (framePhase % 4) * Math.PI / 2;
+  for (let i = 0; i < 4; i++) {
+    const a = angle + i * Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * r / 3, cy + Math.sin(a) * r / 3);
+    ctx.stroke();
+  }
+}
+
+function drawBusAvatar(px, py, framePhase) {
+  const s = 5;
+  const groundY = 420;
+  const ox = px - 24;
+  const oy = groundY - (13 * s);
+
+  // Ground shadow to avoid floating look.
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(ox + s * 12, groundY + 1, s * 10, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f5c842';
+  ctx.fillRect(ox, oy + s, s * 24, s * 10);
+
+  ctx.fillStyle = '#c49a00';
+  ctx.fillRect(ox + s, oy, s * 22, s * 2);
+  ctx.fillStyle = '#f5c842';
+  ctx.fillRect(ox + s * 2, oy, s * 20, s * 2);
+
+  ctx.fillStyle = '#c49a00';
+  ctx.fillRect(ox, oy + s, s * 2, s * 10);
+  ctx.fillRect(ox + s * 22, oy + s, s * 2, s * 10);
+
+  ctx.fillStyle = '#e0a800';
+  ctx.fillRect(ox + s * 3, oy + s * 2, s * 4, s * 4);
+  ctx.fillStyle = '#6aaccf';
+  ctx.fillRect(ox + s * 3, oy + s * 2, s * 2, s * 4);
+  ctx.fillStyle = '#a8d8ea';
+  ctx.fillRect(ox + s * 5, oy + s * 2, s * 2, s * 4);
+
+  ctx.fillStyle = '#888800';
+  ctx.fillRect(ox + s * 8, oy + s * 2, s * 4, s * 4);
+  ctx.fillRect(ox + s * 13, oy + s * 2, s * 4, s * 4);
+  ctx.fillRect(ox + s * 18, oy + s * 2, s * 3, s * 4);
+
+  ctx.fillStyle = '#a8d8ea';
+  ctx.fillRect(ox + s * 8 + 1, oy + s * 2 + 1, s * 4 - 2, s * 4 - 2);
+  ctx.fillRect(ox + s * 13 + 1, oy + s * 2 + 1, s * 4 - 2, s * 4 - 2);
+  ctx.fillRect(ox + s * 18 + 1, oy + s * 2 + 1, s * 3 - 2, s * 4 - 2);
+
+  ctx.fillStyle = '#111';
+  ctx.fillRect(ox + s * 2, oy + s * 9, s * 20, s);
+  ctx.fillRect(ox, oy + s * 9, s * 3, s * 2);
+  ctx.fillRect(ox + s * 21, oy + s * 9, s * 3, s * 2);
+
+  drawBusWheel(ox + s * 4, oy + s * 9, s * 4, framePhase);
+  drawBusWheel(ox + s * 17, oy + s * 9, s * 4, framePhase);
+}
+
 function drawPlayer() {
   if (!['game', 'event', 'result'].includes(state.phase)) return;
 
@@ -342,6 +418,12 @@ function drawPlayer() {
   const H = '#3d2200';
 
   ctx.save();
+
+  if (state.ridingBus) {
+    drawBusAvatar(px, py, f);
+    ctx.restore();
+    return;
+  }
 
   if (state.playerState === 'run') {
     ctx.fillStyle = H;
@@ -575,6 +657,7 @@ function launchGameRound() {
   state.eventsTriggered = [];
   state.playerState = 'run';
   state.playerFrame = 0;
+  state.ridingBus = false;
   state.scoreSaved = false;
   state.totalScore = 0;
 
@@ -645,6 +728,7 @@ function makeChoiceTimeout() {
   state.energy = Math.max(0, state.energy - 20);
   state.social = Math.max(0, state.social - 10);
   state.totalScore -= 18;
+  state.ridingBus = false;
   state.eventsTriggered.push({ ev: ev.id, choiceIdx: -1 });
   state.phase = 'result';
   hide('eventScreen');
@@ -676,6 +760,7 @@ function makeChoice(idx, choice) {
   state.social = Math.max(0, Math.min(100, state.social + socialDelta));
   state.distance = Math.max(0, state.distance - choice.time);
   state.totalScore += scoreDelta;
+  state.ridingBus = choice.rideBus === true;
   state.eventsTriggered.push({ ev: state.currentEvent.id, choiceIdx: idx });
   state.phase = 'result';
   hide('eventScreen');

@@ -45,7 +45,7 @@ const COMMON_EVENTS = [
     dilema: 'Dilema: priorizar o agora ou buscar uma solucao coletiva?',
     duration: 25000,
     choices: [
-      { text: 'Entrar mesmo lotado', energy: -12, social: -8, time: 0, score: 5, msg: 'Voce chegou, mas o desgaste aumentou.', tension: 'Urgencia pessoal vira pressao para todos.' },
+      { text: 'Entrar mesmo lotado', energy: -12, social: -8, time: 0, score: 5, rideBus: true, msg: 'Voce chegou, mas o desgaste aumentou.', tension: 'Urgencia pessoal vira pressao para todos.' },
       { text: 'Esperar o proximo', energy: -6, social: 8, time: 12, score: 10, msg: 'Atrasou, mas evitou piorar a lotacao.', tension: 'Escolhas eticas nem sempre sao praticas.' },
       { text: 'Registrar reclamacao da linha', energy: -4, social: 12, time: 8, score: 12, msg: 'Voce atrasou pouco e deixou registro oficial.', tension: 'Participacao cidada custa tempo, mas cria mudanca.' },
     ],
@@ -191,7 +191,7 @@ const CHARACTER_EVENTS = {
       dilema: 'Dilema: insistir agora ou esperar o proximo?',
       duration: 25000,
       choices: [
-        { text: 'Pedir acionamento manual', energy: -10, social: 14, time: 9, score: 13, msg: 'Voce embarcou e a falha foi reportada.', tension: 'Acessibilidade nao deveria depender de insistencia.' },
+        { text: 'Pedir acionamento manual', energy: -10, social: 14, time: 9, score: 13, rideBus: true, msg: 'Voce embarcou e a falha foi reportada.', tension: 'Acessibilidade nao deveria depender de insistencia.' },
         { text: 'Esperar o proximo onibus', energy: -6, social: 4, time: 12, score: 7, msg: 'Voce evitou confronto e perdeu mais tempo.', tension: 'Evitar desgaste tambem tem custo.' },
         { text: 'Desistir do deslocamento', energy: -2, social: -12, time: 16, score: 1, msg: 'O compromisso ficou para outro dia.', tension: 'Falha sistemica vira exclusao concreta.' },
       ],

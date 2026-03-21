@@ -692,7 +692,33 @@ function triggerNextEvent() {
     return;
   }
 
-  const ev = state.eventQueue.shift();
+  const isCompatibleWithMoment = (event) => {
+    const context = event.context || 'any';
+    if (context === 'on_bus') return state.ridingBus;
+    if (context === 'bus_stop') return !state.ridingBus;
+    if (context === 'walking') return !state.ridingBus;
+    return true;
+  };
+
+  let evIdx = state.eventQueue.findIndex(isCompatibleWithMoment);
+
+  // If no on-bus event is queued, insert explicit disembark event.
+  if (evIdx === -1 && state.ridingBus) {
+    const alreadyTriggered = state.eventsTriggered.some((item) => item.ev === 'onibus_desembarque');
+    const alreadyQueued = state.eventQueue.some((item) => item.id === 'onibus_desembarque');
+    const disembarkEvent = state.eventsById['onibus_desembarque'];
+    if (!alreadyTriggered && !alreadyQueued && disembarkEvent) {
+      state.eventQueue.unshift(disembarkEvent);
+    }
+    evIdx = state.eventQueue.findIndex(isCompatibleWithMoment);
+  }
+
+  if (evIdx === -1) {
+    state.nextEventAt = Math.min(state.totalDist, state.distance + Math.max(12, state.eventGap * 0.5));
+    return;
+  }
+
+  const [ev] = state.eventQueue.splice(evIdx, 1);
   state.currentEvent = ev;
   state.running = false;
   state.phase = 'event';
@@ -742,7 +768,6 @@ function makeChoiceTimeout() {
   state.energy = Math.max(0, state.energy - 20);
   state.social = Math.max(0, state.social - 10);
   state.totalScore -= 18;
-  state.ridingBus = false;
   state.wrongChoices += 1;
   state.failReason = 'As indecisoes sob pressao se acumularam e o trajeto desandou.';
   state.eventsTriggered.push({ ev: ev.id, choiceIdx: -1 });
@@ -789,7 +814,9 @@ function makeChoice(idx, choice) {
   state.social = Math.max(0, Math.min(100, state.social + socialDelta));
   state.distance = Math.max(0, state.distance - choice.time);
   state.totalScore += scoreDelta;
-  state.ridingBus = choice.rideBus === true;
+  if (Object.prototype.hasOwnProperty.call(choice, 'rideBus')) {
+    state.ridingBus = choice.rideBus === true;
+  }
   if (choice.badChoice === true) {
     state.wrongChoices += 1;
     state.failReason = choice.failReason || 'As escolhas feitas pioraram o caminho ate o ponto final.';

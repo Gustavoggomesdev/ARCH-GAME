@@ -39,6 +39,7 @@ export const CHARACTER_PROFILES = {
 const COMMON_EVENTS = [
   {
     id: 'onibus_lotado',
+    context: 'bus_stop',
     icon: '🚌',
     title: 'ONIBUS LOTADO',
     desc: 'O onibus chega cheio e o personagem precisa chegar ao destino.',
@@ -54,26 +55,28 @@ const COMMON_EVENTS = [
         rideBus: true,
         badChoice: true,
         failReason: 'A pressa em escolhas ruins cansou o personagem e piorou o caminho.',
-        nextEventId: 'onibus_ponto_alagado',
+        nextEventId: 'onibus_quebrou',
         msg: 'A lotacao continuou alta e o personagem seguiu vulneravel no trajeto.',
         tension: 'Adiar a resposta estrutural preserva o cronograma de hoje, mas amplia o dano diario.',
       },
       {
-        text: 'Defender reforco imediato de frota no horario de pico',
+        text: 'Colocar mais onibus no horario de pico',
         energy: -5,
         social: 14,
         time: 9,
         score: 14,
+        rideBus: true,
         nextEventId: 'onibus_reforco_em_teste',
         msg: 'O reforco reduziu pressao no corredor e melhorou a viagem do personagem.',
         tension: 'Reforcar frota funciona, mas desloca onibus de outras linhas se nao houver planejamento.',
       },
       {
-        text: 'Criar fila por prioridade e lotacao maxima no embarque',
+        text: 'Organizar fila com limite de lotacao',
         energy: -6,
         social: 11,
         time: 11,
         score: 12,
+        rideBus: true,
         nextEventId: 'onibus_fila_reorganizada',
         msg: 'O embarque ficou mais previsivel e diminuiu conflito para o personagem.',
         tension: 'Organizar acesso reduz conflito, mas pode ampliar espera de quem tambem esta no limite.',
@@ -82,51 +85,56 @@ const COMMON_EVENTS = [
     fact: 'Sem aumento de frota, a superlotacao vira rotina.',
   },
   {
-    id: 'onibus_ponto_alagado',
+    id: 'onibus_quebrou',
+    context: 'on_bus',
     linkedOnly: true,
     icon: '🚌',
-    title: 'HORA DE DESCER, PONTO ALAGADO',
-    desc: 'O ponto esta alagado e isso pode atrasar o personagem.',
-    dilema: 'Escolha: manter o ponto, mudar o ponto ou criar desvio seguro?',
+    title: 'ONIBUS QUEBROU NO CAMINHO',
+    desc: 'O onibus quebrou e todos ficaram parados no meio da viagem.',
+    dilema: 'Escolha: esperar outro onibus, enviar reserva ou reforcar manutencao?',
     duration: 25000,
     choices: [
       {
-        text: 'Manter parada ativa sem protocolo para alagamento',
+        text: 'Esperar outro onibus sem plano rapido',
         energy: -16,
         social: -5,
         time: 0,
         score: 4,
-        rideBus: false,
+        rideBus: true,
         badChoice: true,
-        failReason: 'As escolhas de risco sem plano cansaram o personagem durante o trajeto.',
-        msg: 'Sem protocolo, o personagem continuou exposto e perdeu mobilidade no restante do dia.',
-        tension: 'Operar no improviso acelera o presente, mas acumula risco para toda a rede.',
+        failReason: 'Sem plano de manutencao, as falhas se repetiram e atrasaram o personagem.',
+        nextEventId: 'onibus_desembarque',
+        msg: 'A espera aumentou e o personagem perdeu muito tempo dentro do onibus.',
+        tension: 'Sem acao rapida, a viagem trava para todo mundo.',
       },
       {
-        text: 'Transferir embarque para ponto alto nos dias de chuva extrema',
+        text: 'Enviar onibus reserva para concluir a viagem',
         energy: -7,
         social: 7,
         time: 10,
         score: 10,
         rideBus: true,
-        msg: 'A medida protegeu o personagem e reduziu interrupcoes por alagamento.',
-        tension: 'Seguranca operacional melhora o sistema, mas pode alongar deslocamentos.',
+        nextEventId: 'onibus_desembarque',
+        msg: 'Com o reserva, a viagem voltou e o personagem conseguiu seguir.',
+        tension: 'Resposta rapida evita atraso maior.',
       },
       {
-        text: 'Implantar desvio emergencial padrao para trechos alagados',
+        text: 'Reforcar manutencao para evitar novas quebras',
         energy: -8,
         social: 13,
         time: 8,
         score: 13,
         rideBus: true,
-        msg: 'O desvio evitou bloqueios e protegeu passageiros no mesmo corredor do personagem.',
-        tension: 'Flexibilidade salva viagens criticas, mas exige centro de controle competente.',
+        nextEventId: 'onibus_desembarque',
+        msg: 'A falha foi resolvida e as proximas viagens ficaram mais estaveis.',
+        tension: 'Cuidar do passado evita repetir o problema no futuro.',
       },
     ],
-    fact: 'Eventos extremos exigem operacao flexivel e informacao em tempo real nos corredores.',
+    fact: 'Manutencao preventiva reduz quebra de onibus e atrasos recorrentes.',
   },
   {
     id: 'onibus_reforco_em_teste',
+    context: 'on_bus',
     linkedOnly: true,
     icon: '🚌',
     title: 'REFORCO DE FROTA EM TESTE',
@@ -140,6 +148,8 @@ const COMMON_EVENTS = [
         social: 7,
         time: 7,
         score: 9,
+        rideBus: true,
+        nextEventId: 'onibus_desembarque',
         msg: 'A lotacao caiu no horario critico e o personagem viajou com menos sobrecarga.',
         tension: 'Melhora parcial evita colapso, mas nao resolve fora do pico.',
       },
@@ -149,17 +159,21 @@ const COMMON_EVENTS = [
         social: -10,
         time: 5,
         score: 4,
+        rideBus: true,
         badChoice: true,
         failReason: 'A solucao adotada resolveu um trecho, mas gerou crise em outro.',
+        nextEventId: 'onibus_desembarque',
         msg: 'O problema saiu do trajeto do personagem e explodiu em outro bairro.',
         tension: 'Resolver um bairro e piorar outro gera injustica na cidade.',
       },
       {
-        text: 'Priorizar concurso e contratacao gradual',
+        text: 'Contratar mais motoristas aos poucos',
         energy: -4,
         social: 15,
         time: 9,
         score: 14,
+        rideBus: true,
+        nextEventId: 'onibus_desembarque',
         msg: 'A melhora veio com atraso, mas reduziu reincidencia para o personagem e para a cidade.',
         tension: 'Estrutura solida demora, e o sofrimento de hoje nao espera.',
       },
@@ -168,6 +182,7 @@ const COMMON_EVENTS = [
   },
   {
     id: 'onibus_fila_reorganizada',
+    context: 'on_bus',
     linkedOnly: true,
     icon: '🚌',
     title: 'FILA REORGANIZADA',
@@ -181,6 +196,8 @@ const COMMON_EVENTS = [
         social: 10,
         time: 10,
         score: 11,
+        rideBus: true,
+        nextEventId: 'onibus_desembarque',
         msg: 'Com previsibilidade, o personagem enfrentou menos conflito no acesso ao onibus.',
         tension: 'Regra clara reduz caos, mas gera frustracao em urgencias reais.',
       },
@@ -190,17 +207,21 @@ const COMMON_EVENTS = [
         social: -9,
         time: 5,
         score: 4,
+        rideBus: true,
         badChoice: true,
         failReason: 'A flexibilizacao sem criterio devolveu o sistema ao caos.',
+        nextEventId: 'onibus_desembarque',
         msg: 'A fila colapsou e o personagem voltou a sofrer com tumulto recorrente.',
         tension: 'Excecao sem criterio parece humana, mas implode a previsibilidade.',
       },
       {
-        text: 'Combinar regra de fila com reforco temporario',
+        text: 'Juntar fila organizada com reforco',
         energy: -4,
         social: 14,
         time: 8,
         score: 13,
+        rideBus: true,
+        nextEventId: 'onibus_desembarque',
         msg: 'A espera caiu com justica operacional, melhorando a rotina do personagem.',
         tension: 'Solucao hibrida exige coordenacao fina e custo adicional.',
       },
@@ -208,7 +229,51 @@ const COMMON_EVENTS = [
     fact: 'Gestao de demanda funciona melhor quando regra operacional e reforco andam juntos.',
   },
   {
+    id: 'onibus_desembarque',
+    context: 'on_bus',
+    linkedOnly: true,
+    icon: '🚏',
+    title: 'CHEGOU O PONTO DE DESCIDA',
+    desc: 'O personagem recebeu aviso e desceu do onibus para seguir a pe.',
+    dilema: 'Escolha: descer no ponto correto e continuar o caminho.',
+    duration: 25000,
+    choices: [
+      {
+        text: 'Descer no ponto e seguir a pe',
+        energy: -2,
+        social: 5,
+        time: 3,
+        score: 10,
+        rideBus: false,
+        msg: 'O personagem desceu no ponto certo e continuou o trajeto.',
+        tension: 'Agora as proximas escolhas acontecem fora do onibus.',
+      },
+      {
+        text: 'Descer no ponto e pedir melhoria no desembarque',
+        energy: -3,
+        social: 8,
+        time: 4,
+        score: 11,
+        rideBus: false,
+        msg: 'O personagem desceu e registrou melhorias para o ponto.',
+        tension: 'Aprender com a viagem ajuda os proximos trajetos.',
+      },
+      {
+        text: 'Descer no ponto e orientar os passageiros',
+        energy: -3,
+        social: 9,
+        time: 4,
+        score: 11,
+        rideBus: false,
+        msg: 'O personagem desceu e ajudou outras pessoas no desembarque.',
+        tension: 'Boa orientacao reduz confusao no final da viagem.',
+      },
+    ],
+    fact: 'Um bom desembarque evita confusao e melhora o fluxo no ponto final.',
+  },
+  {
     id: 'chuva_alagamento',
+    context: 'walking',
     icon: '🌧️',
     title: 'ALAGAMENTO NO CAMINHO',
     desc: 'Choveu forte e uma avenida inteira esta alagada.',
@@ -223,6 +288,7 @@ const COMMON_EVENTS = [
   },
   {
     id: 'obra_surpresa',
+    context: 'walking',
     icon: '🚧',
     title: 'OBRA SURPRESA',
     desc: 'Uma obra fechou a rota do personagem sem aviso claro.',
@@ -236,7 +302,23 @@ const COMMON_EVENTS = [
     fact: 'Sinalizacao deficiente em obras eleva atraso e risco de acidente.',
   },
   {
+    id: 'semaforo_quebrado',
+    context: 'walking',
+    icon: '🚦',
+    title: 'SEMAFORO QUEBRADO',
+    desc: 'Um cruzamento importante ficou sem sinal e o transito travou.',
+    dilema: 'Escolha: deixar como esta, colocar apoio ou consertar rapido?',
+    duration: 25000,
+    choices: [
+      { text: 'Esperar sem fazer acao imediata', energy: -11, social: -5, time: 10, score: 4, badChoice: true, failReason: 'A demora para agir aumentou confusao e cansaco no caminho.', msg: 'O personagem ficou mais tempo parado no congestionamento.', tension: 'Sem resposta rapida, o problema cresce em minutos.' },
+      { text: 'Colocar agentes para organizar a passagem', energy: -7, social: 9, time: 8, score: 10, msg: 'O fluxo melhorou e o personagem passou com menos atraso.', tension: 'Ajuda no momento, mas precisa conserto tecnico.' },
+      { text: 'Consertar o semaforo com prioridade maxima', energy: -5, social: 13, time: 6, score: 12, msg: 'Com o sinal funcionando, o caminho ficou mais seguro para todos.', tension: 'Conserto rapido evita que o caos vire rotina.' },
+    ],
+    fact: 'Sinalizacao funcionando reduz atraso e risco de acidente.',
+  },
+  {
     id: 'tarifa_alta',
+    context: 'bus_stop',
     icon: '💸',
     title: 'PASSAGEM MAIS CARA',
     desc: 'A tarifa subiu e o orcamento da semana apertou.',
@@ -250,7 +332,23 @@ const COMMON_EVENTS = [
     fact: 'Transporte pesa mais no bolso de familias de baixa renda.',
   },
   {
+    id: 'terminal_sem_agua',
+    context: 'bus_stop',
+    icon: '🚰',
+    title: 'TERMINAL SEM AGUA',
+    desc: 'No terminal, os bebedouros estao sem agua.',
+    dilema: 'Escolha: ignorar, levar agua em carro-pipa ou consertar o sistema?',
+    duration: 25000,
+    choices: [
+      { text: 'Nao agir e esperar normalizar sozinho', energy: -10, social: -7, time: 7, score: 3, badChoice: true, failReason: 'Sem agua, o desgaste das pessoas aumentou durante o trajeto.', msg: 'O personagem seguiu com mais cansaco no calor.', tension: 'Necessidade basica sem resposta piora todo o percurso.' },
+      { text: 'Levar agua provisoria para o terminal', energy: -6, social: 10, time: 7, score: 9, msg: 'A medida ajudou no dia e reduziu o desconforto.', tension: 'Solucao rapida ajuda, mas nao resolve de vez.' },
+      { text: 'Consertar bebedouros e criar rotina de manutencao', energy: -4, social: 14, time: 8, score: 13, msg: 'Com agua regular, o personagem viajou com mais seguranca e conforto.', tension: 'Manter funcionando exige cuidado continuo.' },
+    ],
+    fact: 'Pontos de agua reduzem riscos em dias quentes.',
+  },
+  {
     id: 'calor_extremo',
+    context: 'walking',
     icon: '🌡️',
     title: 'ONDA DE CALOR',
     desc: 'O trajeto esta sob calor extremo e falta sombra em varios pontos.',
@@ -265,6 +363,7 @@ const COMMON_EVENTS = [
   },
   {
     id: 'seguranca_noturna',
+    context: 'walking',
     icon: '🚶',
     title: 'TRECHO MAL ILUMINADO',
     desc: 'Um trecho escuro no retorno aumenta o medo e a incerteza.',
@@ -277,6 +376,21 @@ const COMMON_EVENTS = [
     ],
     fact: 'Iluminacao publica adequada reduz risco e aumenta uso do espaco urbano.',
   },
+  {
+    id: 'buraco_na_via',
+    context: 'on_bus',
+    icon: '🕳️',
+    title: 'BURACO NA VIA',
+    desc: 'Um buraco grande na via principal esta atrasando os onibus.',
+    dilema: 'Escolha: sinalizar, tapar rapido ou fazer reparo completo?',
+    duration: 25000,
+    choices: [
+      { text: 'Apenas sinalizar e adiar conserto', energy: -9, social: -4, time: 9, score: 5, msg: 'A sinalizacao evitou pior acidente, mas o atraso continuou.', tension: 'Sinalizar e importante, mas o problema segue.' },
+      { text: 'Fazer tapa-buraco emergencial', energy: -6, social: 7, time: 7, score: 9, rideBus: false, msg: 'O trajeto melhorou por alguns dias.', tension: 'Ajuda rapida, mas pode voltar logo.' },
+      { text: 'Refazer o trecho com reparo completo', energy: -5, social: 13, time: 8, score: 12, rideBus: false, msg: 'Com via melhor, os onibus voltaram a andar com menos atraso.', tension: 'Leva mais trabalho, mas dura mais tempo.' },
+    ],
+    fact: 'Manutencao preventiva evita buracos e atrasos recorrentes.',
+  },
 ];
 
 const CHARACTER_EVENTS = {
@@ -286,7 +400,7 @@ const CHARACTER_EVENTS = {
       icon: '💼',
       title: 'PONTO DESATIVADO',
       desc: 'O ponto usado pelo personagem foi fechado sem aviso claro.',
-      dilema: 'Escolha: deixar assim, criar ponto provisiorio ou reorganizar a linha?',
+      dilema: 'Escolha: deixar assim, criar ponto provisorio ou arrumar a linha?',
       duration: 25000,
       choices: [
         { text: 'Manter ponto desativado sem alternativa de cobertura', energy: -8, social: -4, time: 10, score: 5, msg: 'O personagem absorveu mais caminhada e perda de tempo diaria.', tension: 'Corte operacional sem mitigacao transfere custo para o trabalhador.' },
@@ -296,23 +410,25 @@ const CHARACTER_EVENTS = {
       fact: 'Mudancas sem aviso atingem mais quem depende de integracao.',
     },
     {
-      id: 'trab_hora_extra',
-      icon: '🕘',
-      title: 'HORA EXTRA IMPREVISTA',
-      desc: 'Muitas pessoas estao saindo tarde do trabalho e isso piora a volta para casa.',
-      dilema: 'Escolha: nao mudar nada, combinar saidas por horario ou incentivar horarios melhores?',
+      id: 'trab_cartao_sem_saldo',
+      context: 'bus_stop',
+      icon: '💼',
+      title: 'CARTAO SEM SALDO',
+      desc: 'Muitos trabalhadores estao ficando sem saldo no cartao de transporte.',
+      dilema: 'Escolha: deixar cada um resolver, criar aviso ou facilitar recarga?',
       duration: 25000,
       choices: [
-        { text: 'Nao intervir nas jornadas e manter horas extras imprevisiveis', energy: -14, social: 1, time: 8, score: 8, msg: 'Sem politica de mobilidade laboral, o personagem seguiu em exaustao.', tension: 'Renda imediata pode mascarar adoecimento por deslocamento estendido.' },
-        { text: 'Combinar horarios de saida com as empresas', energy: -7, social: 7, time: 6, score: 11, msg: 'A lotacao caiu e o personagem viajou com menos cansaco.', tension: 'Da certo, mas precisa parceria das empresas.' },
-        { text: 'Dar incentivo para horarios compativeis com transporte', energy: 4, social: -8, time: 3, score: 6, msg: 'Algumas empresas ajudaram, outras resistiram.', tension: 'A mudanca funciona melhor quando todos participam.' },
+        { text: 'Nao mudar nada no sistema de recarga', energy: -10, social: -6, time: 8, score: 4, badChoice: true, failReason: 'Sem apoio, mais pessoas perderam viagem por falta de saldo.', msg: 'O personagem perdeu tempo procurando recarga.', tension: 'Sem informacao clara, a fila e a frustracao aumentam.' },
+        { text: 'Criar aviso antecipado de saldo baixo', energy: -6, social: 8, time: 7, score: 9, msg: 'Com aviso, o personagem conseguiu se planejar melhor.', tension: 'Informacao simples evita muitos atrasos.' },
+        { text: 'Abrir mais pontos de recarga no bairro', energy: -5, social: 13, time: 6, score: 12, msg: 'Com recarga perto, o personagem conseguiu seguir sem interrupcao.', tension: 'Facilitar acesso reduz falhas no dia a dia.' },
       ],
-      fact: 'Deslocamento longo somado a jornada extensa aumenta risco de adoecimento.',
+      fact: 'Recarga acessivel diminui faltas e atrasos no trabalho.',
     },
   ],
   cadeirante: [
     {
       id: 'cad_calcada',
+      context: 'walking',
       icon: '♿',
       title: 'CALCADA BLOQUEADA',
       desc: 'Entulho e obra sem rampa interromperam a passagem da calcada.',
@@ -327,6 +443,7 @@ const CHARACTER_EVENTS = {
     },
     {
       id: 'cad_elevador',
+      context: 'walking',
       icon: '♿',
       title: 'ELEVADOR DA ESTACAO PARADO',
       desc: 'O elevador da estacao falhou e nao ha previsao de reparo.',
@@ -335,12 +452,13 @@ const CHARACTER_EVENTS = {
       choices: [
         { text: 'Ativar plano de emergencia acessivel', energy: -8, social: 15, time: 11, score: 13, msg: 'Mesmo com falha, o personagem conseguiu continuar viagem.', tension: 'Plano ajuda na hora, mas precisa conserto definitivo.' },
         { text: 'Pagar transporte alternativo so em emergencia', energy: -5, social: -4, time: 7, score: 6, msg: 'A viagem aconteceu, mas o custo subiu muito.', tension: 'Resolve hoje, mas nao resolve o problema principal.', badChoice: true, failReason: 'A cidade gastou muito em emergencia e nao resolveu a causa do problema.' },
-        { text: 'Postergar reparo e priorizar outras estacoes', energy: -3, social: -11, time: 15, score: 1, msg: 'A exclusao se repetiu e o personagem perdeu oportunidades no trajeto.', tension: 'Priorizar sem criterio acessivel amplia desigualdade urbana.', badChoice: true, failReason: 'A omissao na acessibilidade gerou exclusao repetida e crise de confianca.' },
+        { text: 'Adiar reparo e focar em outras estacoes', energy: -3, social: -11, time: 15, score: 1, msg: 'A exclusao se repetiu e o personagem perdeu oportunidades no trajeto.', tension: 'Sem criterio de acessibilidade, a desigualdade aumenta.', badChoice: true, failReason: 'A omissao na acessibilidade gerou exclusao repetida e crise de confianca.' },
       ],
       fact: 'Falhas em elevador e plataforma limitam acesso a trabalho e estudo.',
     },
     {
       id: 'cad_rampa_onibus',
+      context: 'bus_stop',
       icon: '♿',
       title: 'RAMPA DO ONIBUS FALHOU',
       desc: 'O onibus chegou, mas a rampa nao funcionou no embarque.',
@@ -353,10 +471,26 @@ const CHARACTER_EVENTS = {
       ],
       fact: 'Frota acessivel sem manutencao continua nao garante mobilidade real.',
     },
+    {
+      id: 'cad_vaga_bloqueada',
+      context: 'walking',
+      icon: '♿',
+      title: 'VAGA ACESSIVEL BLOQUEADA',
+      desc: 'Uma vaga acessivel perto da estacao foi ocupada de forma irregular.',
+      dilema: 'Escolha: nao fiscalizar, multar ocasionalmente ou fiscalizar sempre?',
+      duration: 25000,
+      choices: [
+        { text: 'Deixar sem fiscalizacao constante', energy: -11, social: -6, time: 9, score: 4, badChoice: true, failReason: 'Sem fiscalizacao, a vaga acessivel ficou indisponivel varias vezes.', msg: 'O personagem perdeu autonomia para chegar ao ponto.', tension: 'Direito sem controle vira sorte.' },
+        { text: 'Aplicar multa apenas em operacoes especiais', energy: -7, social: 8, time: 8, score: 9, msg: 'Houve melhora em alguns dias, mas nao em todos.', tension: 'Acao parcial ajuda, mas nao muda o habito.' },
+        { text: 'Fiscalizar diariamente com canal de denuncia', energy: -5, social: 14, time: 7, score: 13, msg: 'Com regra sendo cumprida, o personagem ganhou acesso mais constante.', tension: 'Controle continuo protege o direito de mobilidade.' },
+      ],
+      fact: 'Fiscalizacao regular aumenta respeito a vagas acessiveis.',
+    },
   ],
   def_visual: [
     {
       id: 'vis_piso_tatil',
+      context: 'walking',
       icon: '🦯',
       title: 'PISO TATIL INTERROMPIDO',
       desc: 'O piso tatil some no meio da calcada e termina em obstaculos.',
@@ -371,6 +505,7 @@ const CHARACTER_EVENTS = {
     },
     {
       id: 'vis_semaforo',
+      context: 'walking',
       icon: '🦯',
       title: 'SEMAFORO SONORO DESLIGADO',
       desc: 'O cruzamento esta intenso e o sinal sonoro nao funciona.',
@@ -385,6 +520,7 @@ const CHARACTER_EVENTS = {
     },
     {
       id: 'vis_painel_audio',
+      context: 'bus_stop',
       icon: '🦯',
       title: 'PAINEL DE VOZ FORA DO AR',
       desc: 'No terminal, o painel sonoro nao informa plataformas.',
@@ -397,10 +533,26 @@ const CHARACTER_EVENTS = {
       ],
       fact: 'Informacao acessivel em tempo real reduz erro de trajeto.',
     },
+    {
+      id: 'vis_app_audio',
+      context: 'bus_stop',
+      icon: '🦯',
+      title: 'APP DE VOZ INSTAVEL',
+      desc: 'O aplicativo de audio do transporte esta falhando em alguns pontos.',
+      dilema: 'Escolha: manter app instavel, reforcar equipe ou corrigir o app?',
+      duration: 25000,
+      choices: [
+        { text: 'Manter app sem correcao imediata', energy: -10, social: -5, time: 9, score: 4, badChoice: true, failReason: 'Sem correcao, as falhas de audio repetiram e aumentaram erros de trajeto.', msg: 'O personagem ficou inseguro para confirmar o caminho.', tension: 'Tecnologia falhando sem ajuste aumenta exclusao.' },
+        { text: 'Reforcar apoio humano ate estabilizar', energy: -7, social: 9, time: 8, score: 10, msg: 'Com apoio no local, o personagem errou menos o trajeto.', tension: 'Ajuda boa para agora, mas app precisa funcionar.' },
+        { text: 'Corrigir app e testar audio em toda a rota', energy: -5, social: 13, time: 7, score: 12, msg: 'Com audio estavel, o personagem ganhou mais autonomia.', tension: 'Teste continuo garante qualidade do servico.' },
+      ],
+      fact: 'Ferramentas de audio confiaveis melhoram a orientacao no transporte.',
+    },
   ],
   mae_solo: [
     {
       id: 'mae_creche',
+      context: 'walking',
       icon: '👩‍👦',
       title: 'CRECHE FECHOU MAIS CEDO',
       desc: 'A escola avisou que vai fechar antes do horario normal.',
@@ -409,12 +561,13 @@ const CHARACTER_EVENTS = {
       choices: [
         { text: 'Criar protocolo de extensao emergencial de creche conveniada', energy: -10, social: 12, time: 12, score: 12, msg: 'O personagem teve cobertura imediata de cuidado sem romper totalmente a rotina.', tension: 'Resposta emergencial protege familias, mas precisa rede suficiente.' },
         { text: 'Apoiar rede de cuidadoras do bairro', energy: -5, social: 14, time: 7, score: 13, msg: 'A rede local ajudou e o problema repetiu menos.', tension: 'Rede do bairro funciona bem com boa organizacao.' },
-        { text: 'Nao intervir e manter fechamento antecipado sem contingencia', energy: -13, social: -10, time: 6, score: 2, msg: 'A crise de cuidado se repetiu e o personagem acumulou perdas no trabalho.', tension: 'Sem politica de cuidado, o custo recai inteiro nas familias.', badChoice: true, failReason: 'A ausencia de politica de cuidado infantil gerou colapso recorrente na rotina familiar.' },
+        { text: 'Nao agir e manter fechamento antecipado sem plano', energy: -13, social: -10, time: 6, score: 2, msg: 'A crise de cuidado se repetiu e o personagem acumulou perdas no trabalho.', tension: 'Sem politica de cuidado, o custo recai inteiro nas familias.', badChoice: true, failReason: 'A ausencia de politica de cuidado infantil gerou colapso recorrente na rotina familiar.' },
       ],
       fact: 'Instabilidade no cuidado infantil afeta renda e saude mental.',
     },
     {
       id: 'mae_remedio',
+      context: 'walking',
       icon: '👩‍👦',
       title: 'REMEDIO EM FALTA',
       desc: 'O remedio da crianca acabou e o posto do bairro nao tem reposicao.',
@@ -429,28 +582,82 @@ const CHARACTER_EVENTS = {
     },
     {
       id: 'mae_dupla_jornada',
+      context: 'walking',
       icon: '👩‍👦',
       title: 'DUPLA JORNADA',
       desc: 'Depois do trabalho ainda ha casa, mercado e tarefa escolar.',
-      dilema: 'Escolha: criar apoio, manter sem suporte ou priorizar casos urgentes?',
+      dilema: 'Escolha: criar apoio, manter sem suporte ou atender urgencias?',
       duration: 25000,
       choices: [
         { text: 'Criar programa de apoio para familias solo', energy: 8, social: 12, time: 9, score: 14, msg: 'Com apoio constante, o personagem ficou menos sobrecarregado.', tension: 'Ajuda muito, mas precisa continuar ao longo do tempo.' },
         { text: 'Manter rotina sem suporte publico de cuidado', energy: -16, social: 3, time: 10, score: 8, msg: 'A sobrecarga continuou e o personagem chegou a exaustao frequente.', tension: 'Sem apoio institucional, a dupla jornada vira ciclo de adoecimento.', badChoice: true, failReason: 'A falta de suporte ao cuidado manteve a sobrecarga extrema e recorrente.' },
-        { text: 'Criar rede de priorizacao de demandas familiares urgentes', energy: -4, social: 7, time: 6, score: 10, msg: 'A rotina ficou mais viavel com atendimento rapido para casos criticos.', tension: 'Priorizar urgencias ajuda muito, mas nao elimina carencias estruturais.' },
+        { text: 'Criar rede para atender familias em urgencia', energy: -4, social: 7, time: 6, score: 10, msg: 'A rotina ficou mais viavel com atendimento rapido para casos criticos.', tension: 'Atender urgencias ajuda muito, mas nao elimina carencias estruturais.' },
       ],
       fact: 'Sobrecarga da dupla jornada impacta saude e renda no longo prazo.',
+    },
+    {
+      id: 'mae_onibus_escolar',
+      context: 'bus_stop',
+      icon: '👩‍👦',
+      title: 'ATRASO NO ONIBUS ESCOLAR',
+      desc: 'O onibus escolar atrasou e desorganizou a rotina da familia.',
+      dilema: 'Escolha: ignorar, avisar melhor ou reorganizar a rota escolar?',
+      duration: 25000,
+      choices: [
+        { text: 'Nao criar plano para atrasos escolares', energy: -11, social: -7, time: 9, score: 4, badChoice: true, failReason: 'Sem plano, os atrasos escolares continuaram e afetaram a rotina familiar.', msg: 'O personagem acumulou atraso e estresse no mesmo dia.', tension: 'Sem organizacao, o problema volta sempre.' },
+        { text: 'Mandar aviso rapido para familias', energy: -6, social: 9, time: 7, score: 9, msg: 'Com aviso, o personagem conseguiu se reorganizar melhor.', tension: 'Aviso ajuda muito, mas nao evita atraso.' },
+        { text: 'Reorganizar rota e horario do onibus escolar', energy: -5, social: 14, time: 8, score: 13, msg: 'Com rota ajustada, a rotina da familia ficou mais estavel.', tension: 'Planejamento melhora o dia a dia de muitas familias.' },
+      ],
+      fact: 'Rota escolar previsivel melhora frequencia e bem-estar das familias.',
     },
   ],
 };
 
 export function getEventsForCharacter(characterId = DEFAULT_CHARACTER) {
   const profileEvents = CHARACTER_EVENTS[characterId] || [];
-  const pool = profileEvents.length > 0
-    ? [profileEvents[0], ...COMMON_EVENTS, ...profileEvents.slice(1)]
-    : [...COMMON_EVENTS];
+  const mainCommonOrder = [
+    'obra_surpresa',
+    'onibus_lotado',
+    'semaforo_quebrado',
+    'chuva_alagamento',
+    'tarifa_alta',
+    'terminal_sem_agua',
+    'buraco_na_via',
+    'calor_extremo',
+    'seguranca_noturna',
+  ];
 
-  return pool.map((event) => ({
+  const commonById = Object.fromEntries(COMMON_EVENTS.map((event) => [event.id, event]));
+  const orderedCommon = mainCommonOrder
+    .map((id) => commonById[id])
+    .filter(Boolean);
+
+  const linkedCommon = COMMON_EVENTS.filter((event) => event.linkedOnly);
+
+  const pool = [];
+  let commonIdx = 0;
+  let profileIdx = 0;
+
+  if (profileEvents[profileIdx]) {
+    pool.push(profileEvents[profileIdx]);
+    profileIdx += 1;
+  }
+
+  while (commonIdx < orderedCommon.length || profileIdx < profileEvents.length) {
+    for (let i = 0; i < 2 && commonIdx < orderedCommon.length; i += 1) {
+      pool.push(orderedCommon[commonIdx]);
+      commonIdx += 1;
+    }
+
+    if (profileIdx < profileEvents.length) {
+      pool.push(profileEvents[profileIdx]);
+      profileIdx += 1;
+    }
+  }
+
+  const finalPool = [...pool, ...linkedCommon];
+
+  return finalPool.map((event) => ({
     ...event,
     choices: event.choices.map((choice) => ({ ...choice })),
   }));

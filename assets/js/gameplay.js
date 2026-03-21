@@ -189,23 +189,57 @@ function pr(x) {
   return Math.round(x);
 }
 
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function getJourneyProgress() {
+  if (!state.totalDist) return 0;
+  return clamp01(state.distance / state.totalDist);
+}
+
+function hexToRgb(hex) {
+  const clean = hex.replace('#', '');
+  return {
+    r: parseInt(clean.slice(0, 2), 16),
+    g: parseInt(clean.slice(2, 4), 16),
+    b: parseInt(clean.slice(4, 6), 16),
+  };
+}
+
+function mixHex(from, to, t) {
+  const a = hexToRgb(from);
+  const b = hexToRgb(to);
+  const p = clamp01(t);
+  const r = Math.round(a.r + (b.r - a.r) * p);
+  const g = Math.round(a.g + (b.g - a.g) * p);
+  const bb = Math.round(a.b + (b.b - a.b) * p);
+  return `rgb(${r}, ${g}, ${bb})`;
+}
+
 function drawSky() {
+  const dayProgress = getJourneyProgress();
   const g = ctx.createLinearGradient(0, 0, 0, 240);
-  g.addColorStop(0, '#02020e');
-  g.addColorStop(0.6, '#0e0e2e');
-  g.addColorStop(1, '#1e1040');
+  g.addColorStop(0, mixHex('#02020e', '#7ec8ff', dayProgress));
+  g.addColorStop(0.6, mixHex('#0e0e2e', '#a6dcff', dayProgress));
+  g.addColorStop(1, mixHex('#1e1040', '#d8f0ff', dayProgress));
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 800, 240);
 
+  const starAlpha = 1 - dayProgress;
   for (let i = 0; i < 50; i++) {
     const sx = (i * 131 + bgOffset * 0.08) % 820;
     const sy = (i * 47) % 190;
-    ctx.fillStyle = i % 7 === 0 ? '#ffe' : '#888';
+    if (starAlpha <= 0.03) continue;
+    ctx.fillStyle = i % 7 === 0
+      ? `rgba(255, 255, 238, ${0.9 * starAlpha})`
+      : `rgba(136, 136, 136, ${0.7 * starAlpha})`;
     ctx.fillRect(pr(sx), pr(sy), i % 7 === 0 ? 2 : 1, i % 7 === 0 ? 2 : 1);
   }
 }
 
 function drawBuildings() {
+  const dayProgress = getJourneyProgress();
   buildings.forEach((b) => {
     const bx = ((b.x - bgOffset * 0.35) % 1650 + 1650) % 1650 - 60;
     const by = 240 - b.h;
@@ -218,18 +252,22 @@ function drawBuildings() {
 
     b.windows.forEach((w) => {
       const on = w.on && !(w.fl && Math.floor(Date.now() / 700) % 3 === 0);
-      ctx.fillStyle = on ? '#f5c842' : '#08081a';
+      ctx.fillStyle = on
+        ? mixHex('#f5c842', '#e6f6ff', dayProgress)
+        : mixHex('#08081a', '#31506a', dayProgress);
       ctx.fillRect(pr(bx + w.dx), pr(by + w.dy), 5, 7);
     });
   });
 }
 
 function drawClouds() {
+  const dayProgress = getJourneyProgress();
   clouds.forEach((c) => {
     c.x -= c.spd;
     if (c.x < -110) c.x = 910;
 
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    const cloudAlpha = 0.04 + dayProgress * 0.14;
+    ctx.fillStyle = `rgba(255,255,255,${cloudAlpha.toFixed(3)})`;
     ctx.fillRect(pr(c.x), pr(c.y), c.w, 14);
     ctx.fillRect(pr(c.x + 10), pr(c.y - 7), c.w - 20, 10);
   });

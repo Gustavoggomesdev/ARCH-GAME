@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Ônibus Pixel Art</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 16px;
+    font-family: monospace;
+  }
+  canvas { image-rendering: pixelated; border: 2px solid #f5c842; }
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    color: #f5c842;
+    font-size: 13px;
+  }
+  label { color: #888; font-size: 11px; }
+  input[type=range] { width: 120px; accent-color: #f5c842; }
+  button {
+    font-family: monospace;
+    font-size: 11px;
+    background: transparent;
+    border: 2px solid #f5c842;
+    color: #f5c842;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #f5c842; color: #000; }
+</style>
+</head>
+<body>
+
+<canvas id="c" width="600" height="200"></canvas>
+
+<div class="controls">
+  <label>VELOCIDADE</label>
+  <input type="range" min="1" max="8" value="3" id="spd">
+  <button onclick="exportPNG()">EXPORTAR PNG</button>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const S = 4; // escala: 1 pixel do sprite = 4px na tela
+const W = canvas.width;
+const H = canvas.height;
+
+const P = {
+  body:   '#f5c842',
+  bodyDk: '#c49a00',
+  win:    '#a8d8ea',
+  winDk:  '#6aaccf',
+  winFr:  '#888800',
+  wheel:  '#222222',
+  wheelR: '#555555',
+  black:  '#111111',
+  white:  '#eeeeee',
+  red:    '#e63946',
+  door:   '#e0a800',
+  sky:    '#0a0a1a',
+};
+
+let roadOffset = 0;
+let bgOffset   = 0;
+let busX       = W / 2 - S * 12;
+let frame      = 0;
+
+// ── Desenha o ônibus ──────────────────────────────────────────
+function drawBus(c, ox, oy, fr) {
+  const s = S;
+
+  // Corpo
+  c.fillStyle = P.body;
+  c.fillRect(ox, oy + s, s*24, s*10);
+
+  // Teto
+  c.fillStyle = P.bodyDk;
+  c.fillRect(ox + s, oy, s*22, s*2);
+  c.fillStyle = P.body;
+  c.fillRect(ox + s*2, oy, s*20, s*2);
+
+  // Frente
+  c.fillStyle = P.bodyDk;
+  c.fillRect(ox, oy + s, s*2, s*10);
+  // Farol
+  c.fillStyle = P.white;
+  c.fillRect(ox + s, oy + s*3, s*2, s*2);
+  c.fillStyle = '#ffffaa';
+  c.fillRect(ox + s, oy + s*3, s, s);
+  // Para-choque frente
+  c.fillStyle = P.black;
+  c.fillRect(ox, oy + s*9, s*3, s*2);
+
+  // Traseira
+  c.fillStyle = P.bodyDk;
+  c.fillRect(ox + s*22, oy + s, s*2, s*10);
+  // Lanterna
+  c.fillStyle = P.red;
+  c.fillRect(ox + s*22, oy + s*3, s*2, s*2);
+  // Para-choque traseiro
+  c.fillStyle = P.black;
+  c.fillRect(ox + s*21, oy + s*9, s*3, s*2);
+
+  // Faixa da cintura
+  c.fillStyle = P.bodyDk;
+  c.fillRect(ox + s*2, oy + s*6, s*20, s);
+
+  // Porta dupla
+  c.fillStyle = P.door;
+  c.fillRect(ox + s*3, oy + s*2, s*4, s*4);
+  c.fillStyle = P.winDk;
+  c.fillRect(ox + s*3, oy + s*2, s*2, s*4);
+  c.fillStyle = P.win;
+  c.fillRect(ox + s*5, oy + s*2, s*2, s*4);
+  // divisória
+  c.fillStyle = P.bodyDk;
+  c.fillRect(ox + s*5 - 1, oy + s*2, 2, s*4);
+
+  // Janela 1
+  c.fillStyle = P.winFr;
+  c.fillRect(ox + s*8, oy + s*2, s*4, s*4);
+  c.fillStyle = P.win;
+  c.fillRect(ox + s*8 + 2, oy + s*2 + 2, s*4 - 4, s*4 - 4);
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillRect(ox + s*8 + 3, oy + s*2 + 3, 3, 4);
+
+  // Janela 2
+  c.fillStyle = P.winFr;
+  c.fillRect(ox + s*13, oy + s*2, s*4, s*4);
+  c.fillStyle = P.win;
+  c.fillRect(ox + s*13 + 2, oy + s*2 + 2, s*4 - 4, s*4 - 4);
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillRect(ox + s*13 + 3, oy + s*2 + 3, 3, 4);
+
+  // Janela 3
+  c.fillStyle = P.winFr;
+  c.fillRect(ox + s*18, oy + s*2, s*3, s*4);
+  c.fillStyle = P.win;
+  c.fillRect(ox + s*18 + 2, oy + s*2 + 2, s*3 - 4, s*4 - 4);
+  c.fillStyle = 'rgba(255,255,255,0.35)';
+  c.fillRect(ox + s*18 + 3, oy + s*2 + 3, 3, 4);
+
+  // Piso (linha preta abaixo das janelas)
+  c.fillStyle = P.black;
+  c.fillRect(ox + s*2, oy + s*9, s*20, s);
+
+  // Rodas
+  drawWheel(c, ox + s*4,  oy + s*9, s*4, fr);
+  drawWheel(c, ox + s*17, oy + s*9, s*4, fr);
+}
+
+function drawWheel(c, cx, cy, r, fr) {
+  const mx = cx + r/2, my = cy + r/2;
+
+  // Pneu
+  c.fillStyle = P.wheel;
+  c.beginPath();
+  c.arc(mx, my, r/2, 0, Math.PI*2);
+  c.fill();
+
+  // Aro
+  c.fillStyle = P.wheelR;
+  c.beginPath();
+  c.arc(mx, my, r/3, 0, Math.PI*2);
+  c.fill();
+
+  // Raios giratórios
+  c.strokeStyle = '#888';
+  c.lineWidth = 1.5;
+  const angle = fr * Math.PI / 2;
+  for (let i = 0; i < 4; i++) {
+    const a = angle + i * Math.PI/2;
+    c.beginPath();
+    c.moveTo(mx, my);
+    c.lineTo(mx + Math.cos(a) * r/3, my + Math.sin(a) * r/3);
+    c.stroke();
+  }
+
+  // Centro
+  c.fillStyle = '#f5c842';
+  c.beginPath();
+  c.arc(mx, my, 2, 0, Math.PI*2);
+  c.fill();
+}
+
+// ── Loop principal ────────────────────────────────────────────
+function drawScene() {
+  const spd = parseInt(document.getElementById('spd').value);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Céu
+  ctx.fillStyle = P.sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // Estrelas
+  for (let i = 0; i < 25; i++) {
+    const sx = ((i * 97 + bgOffset * 0.2) % W);
+    const sy = (i * 37) % 65;
+    ctx.fillStyle = i % 5 === 0 ? '#ffe' : '#666';
+    ctx.fillRect(Math.round(sx), Math.round(sy), i%5===0 ? 2 : 1, i%5===0 ? 2 : 1);
+  }
+
+  // Prédios (parallax lento)
+  const bhs = [70,50,85,55,68,45,78,60,52,72,88,56];
+  bhs.forEach((bh, i) => {
+    const bx = ((i * 65 - bgOffset * 0.5) % (W + 65) + W + 65) % (W + 65) - 30;
+    ctx.fillStyle = '#1a1040';
+    ctx.fillRect(Math.round(bx), H - 60 - bh, 38, bh);
+    for (let wy = H-60-bh+6; wy < H-66; wy += 13) {
+      for (let wx = 4; wx < 32; wx += 11) {
+        if (Math.floor(i*7 + wy*3 + wx) % 3 !== 0) {
+          ctx.fillStyle = '#f5c842';
+          ctx.fillRect(Math.round(bx) + wx, wy, 5, 8);
+        }
+      }
+    }
+  });
+
+  // Calçada
+  ctx.fillStyle = '#252525';
+  ctx.fillRect(0, H - 60, W, 20);
+
+  // Pista
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, H - 40, W, 40);
+
+  // Faixas da pista
+  ctx.fillStyle = '#f5c842';
+  for (let i = 0; i < 12; i++) {
+    const lx = ((i * 65 - roadOffset) % (W + 65) + W + 65) % (W + 65);
+    ctx.fillRect(Math.round(lx), H - 22, 38, 4);
+  }
+
+  // Postes
+  for (let i = 0; i < 6; i++) {
+    const px = ((i * 140 - bgOffset * 0.85) % (W + 140) + W + 140) % (W + 140) - 20;
+    ctx.fillStyle = '#555';
+    ctx.fillRect(Math.round(px) + 6, H - 125, 4, 65);
+    ctx.fillStyle = '#777';
+    ctx.fillRect(Math.round(px), H - 127, 18, 6);
+    ctx.fillStyle = 'rgba(255,240,120,0.18)';
+    ctx.beginPath();
+    ctx.arc(Math.round(px) + 9, H - 125, 18, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Sombra do ônibus
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath();
+  ctx.ellipse(Math.round(busX) + S*12, H - 41, S*13, 4, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Solavanco
+  const bounce = Math.sin(roadOffset * 0.09) * (spd * 0.45);
+
+  // Ônibus
+  drawBus(ctx, Math.round(busX), H - 40 - S*12 + Math.round(bounce), Math.floor(frame / 2) % 4);
+
+  // Fumaça de escape
+  const ex = Math.round(busX) + S*23;
+  const ey = H - 40 - S*3;
+  for (let i = 0; i < 4; i++) {
+    const t = (frame * 2 + i * 18) % 70;
+    const alpha = Math.max(0, 0.35 - t / 80);
+    const sz = 3 + t * 0.28;
+    ctx.fillStyle = `rgba(140,140,140,${alpha.toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(ex + t * 0.9, ey - t * 0.25 + i * 2, sz, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Atualiza offsets
+  roadOffset += spd * 1.6;
+  bgOffset   += spd * 0.55;
+  frame      += 1;
+
+  requestAnimationFrame(drawScene);
+}
+
+// ── Exportar PNG (ônibus isolado, fundo transparente) ─────────
+function exportPNG() {
+  const ec = document.createElement('canvas');
+  ec.width  = S*24 + 8;
+  ec.height = S*14;
+  const ex = ec.getContext('2d');
+  ex.imageSmoothingEnabled = false;
+  drawBus(ex, 4, 0, Math.floor(frame / 2) % 4);
+  const a = document.createElement('a');
+  a.download = 'onibus_pixel.png';
+  a.href = ec.toDataURL('image/png');
+  a.click();
+}
+
+drawScene();
+</script>
+</body>
+</html>

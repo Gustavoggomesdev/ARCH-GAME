@@ -1,4 +1,5 @@
 import { CHARACTER_ORDER, CHARACTER_PROFILES, DEFAULT_CHARACTER, getEventsForCharacter } from './data/events.js';
+import { drawCharacterSprite } from './characters/index.js';
 
 const PROGRESS_KEY = 'cidadeV3Progress';
 const UNLOCK_RULES = {
@@ -415,11 +416,6 @@ function drawPlayer() {
   }
 
   const f = state.playerFrame;
-  const R = '#c0392b';
-  const S = '#e8b87a';
-  const P = '#2c3e7f';
-  const SH = '#e08010';
-  const H = '#3d2200';
 
   ctx.save();
 
@@ -429,102 +425,12 @@ function drawPlayer() {
     return;
   }
 
-  if (state.playerState === 'run') {
-    ctx.fillStyle = H;
-    ctx.fillRect(px + 7, py, 10, 3);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 7, py + 2, 10, 9);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(px + 13, py + 5, 2, 2);
-    ctx.fillStyle = R;
-    ctx.fillRect(px + 8, py + 11, 8, 11);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22, 8, 10);
-
-    const ao = [0, 3, 0, -3][f];
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 4, py + 13 + ao, 4, 3);
-    ctx.fillRect(px + 16, py + 13 - ao, 4, 3);
-
-    const le = [[0, 7], [3, 4], [0, 7], [-3, 4]][f];
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22 + le[0], 4, 9);
-    ctx.fillRect(px + 12, py + 22 + le[1], 4, 9);
-    ctx.fillStyle = SH;
-    ctx.fillRect(px + 7, py + 29 + le[0], 5, 3);
-    ctx.fillRect(px + 11, py + 29 + le[1], 5, 3);
-    ctx.fillStyle = '#444';
-    ctx.fillRect(px + 2, py + 13, 4, 7);
-  } else if (state.playerState === 'idle') {
-    const by = f === 0 ? 0 : 1;
-    ctx.fillStyle = H;
-    ctx.fillRect(px + 7, py - by, 10, 3);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 7, py + 2 - by, 10, 9);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(px + 13, py + 5 - by, 2, 2);
-    ctx.fillStyle = R;
-    ctx.fillRect(px + 8, py + 11, 8, 11);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22, 8, 10);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 4, py + 14, 4, 3);
-    ctx.fillRect(px + 16, py + 14, 4, 3);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22, 4, 10);
-    ctx.fillRect(px + 12, py + 22, 4, 10);
-    ctx.fillStyle = SH;
-    ctx.fillRect(px + 7, py + 30, 5, 3);
-    ctx.fillRect(px + 11, py + 30, 5, 3);
-    ctx.fillStyle = '#444';
-    ctx.fillRect(px + 2, py + 13, 4, 7);
-  } else if (state.playerState === 'tired') {
-    const by = f === 0 ? 0 : 1;
-    ctx.fillStyle = H;
-    ctx.fillRect(px + 6, py + 2 - by, 10, 3);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 6, py + 4 - by, 10, 9);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(px + 11, py + 7 - by, 2, 2);
-    ctx.fillStyle = R;
-    ctx.fillRect(px + 7, py + 13, 10, 10);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 7, py + 23, 8, 10);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 3, py + 16, 4, 3);
-    ctx.fillRect(px + 15, py + 16, 4, 3);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 7, py + 23, 4, 10);
-    ctx.fillRect(px + 11, py + 23, 4, 10);
-    ctx.fillStyle = SH;
-    ctx.fillRect(px + 6, py + 31, 5, 3);
-    ctx.fillRect(px + 10, py + 31, 5, 3);
-    ctx.fillStyle = '#f5c842';
-    ctx.font = '9px serif';
-    ctx.fillText('💫', px + 17, py + 6);
-  } else if (state.playerState === 'victory') {
-    ctx.fillStyle = H;
-    ctx.fillRect(px + 7, py, 10, 3);
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 7, py + 2, 10, 9);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(px + 13, py + 5, 2, 2);
-    ctx.fillStyle = R;
-    ctx.fillRect(px + 8, py + 11, 8, 11);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22, 8, 10);
-
-    const au = f === 0 ? -9 : -7;
-    ctx.fillStyle = S;
-    ctx.fillRect(px + 2, py + au, 4, 3);
-    ctx.fillRect(px + 18, py + au, 4, 3);
-    ctx.fillStyle = P;
-    ctx.fillRect(px + 8, py + 22, 4, 10);
-    ctx.fillRect(px + 12, py + 22, 4, 10);
-    ctx.fillStyle = SH;
-    ctx.fillRect(px + 7, py + 30, 5, 3);
-    ctx.fillRect(px + 11, py + 30, 5, 3);
-  }
+  drawCharacterSprite(state.characterId, ctx, {
+    px,
+    py,
+    frame: f,
+    playerState: state.playerState,
+  });
 
   ctx.restore();
 }

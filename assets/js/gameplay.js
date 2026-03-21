@@ -20,6 +20,7 @@ const state = {
   eventTimerPct: 1,
   eventTimerDuration: 25000,
   eventQueue: [],
+  eventsById: {},
   playerX: 80,
   playerFrame: 0,
   playerFrameTimer: 0,
@@ -30,6 +31,9 @@ const state = {
   characterId: DEFAULT_CHARACTER,
   eventGap: 60,
   ridingBus: false,
+  wrongChoices: 0,
+  maxWrongChoices: 3,
+  failReason: '',
 };
 
 let startTime = 0;
@@ -574,6 +578,11 @@ function drawProgressBar() {
   ctx.font = '5px monospace';
   ctx.fillText('INÍCIO', bX, bY + 18);
   ctx.fillText('DESTINO', bX + bW - 28, bY + 18);
+
+  const strikes = `${state.wrongChoices}/${state.maxWrongChoices}`;
+  ctx.fillStyle = '#ffb3b3';
+  ctx.font = '7px monospace';
+  ctx.fillText(`ERROS ${strikes}`, 14, 468);
 }
 
 function gameLoop() {
@@ -594,6 +603,7 @@ function gameLoop() {
     if (state.distance >= state.nextEventAt && state.eventQueue.length > 0) triggerNextEvent();
     if (state.distance >= state.totalDist) endGame();
     if (state.energy <= 0) gameOver();
+    if (state.wrongChoices >= state.maxWrongChoices) gameOver();
 
     updateHUD();
   }
@@ -658,12 +668,16 @@ function launchGameRound() {
   state.playerState = 'run';
   state.playerFrame = 0;
   state.ridingBus = false;
+  state.wrongChoices = 0;
+  state.failReason = '';
   state.scoreSaved = false;
   state.totalScore = 0;
 
   bgOffset = 0;
   particles = [];
-  state.eventQueue = getEventsForCharacter(state.characterId);
+  const allEvents = getEventsForCharacter(state.characterId);
+  state.eventsById = Object.fromEntries(allEvents.map((ev) => [ev.id, ev]));
+  state.eventQueue = allEvents.filter((ev) => !ev.linkedOnly);
   state.eventGap = Math.max(36, Math.round(state.totalDist / (state.eventQueue.length + 1)));
   state.nextEventAt = state.eventGap;
   startTime = Date.now();
@@ -729,6 +743,8 @@ function makeChoiceTimeout() {
   state.social = Math.max(0, state.social - 10);
   state.totalScore -= 18;
   state.ridingBus = false;
+  state.wrongChoices += 1;
+  state.failReason = 'As indecisoes sob pressao se acumularam e o trajeto desandou.';
   state.eventsTriggered.push({ ev: ev.id, choiceIdx: -1 });
   state.phase = 'result';
   hide('eventScreen');
@@ -748,6 +764,19 @@ function makeChoiceTimeout() {
   show('resultScreen');
 }
 
+function queueLinkedEvent(nextEventId) {
+  if (!nextEventId) return;
+  const nextEvent = state.eventsById[nextEventId];
+  if (!nextEvent) return;
+
+  const alreadyTriggered = state.eventsTriggered.some((item) => item.ev === nextEventId);
+  const alreadyQueued = state.eventQueue.some((item) => item.id === nextEventId);
+  if (alreadyTriggered || alreadyQueued) return;
+
+  state.eventQueue.unshift(nextEvent);
+  state.nextEventAt = Math.max(state.distance + 18, state.distance + state.eventGap * 0.45);
+}
+
 function makeChoice(idx, choice) {
   if (state.eventTimer) clearInterval(state.eventTimer);
 
@@ -761,7 +790,12 @@ function makeChoice(idx, choice) {
   state.distance = Math.max(0, state.distance - choice.time);
   state.totalScore += scoreDelta;
   state.ridingBus = choice.rideBus === true;
+  if (choice.badChoice === true) {
+    state.wrongChoices += 1;
+    state.failReason = choice.failReason || 'As escolhas feitas pioraram o caminho ate o ponto final.';
+  }
   state.eventsTriggered.push({ ev: state.currentEvent.id, choiceIdx: idx });
+  queueLinkedEvent(choice.nextEventId);
   state.phase = 'result';
   hide('eventScreen');
 
@@ -775,6 +809,7 @@ function makeChoice(idx, choice) {
   if (socialDelta !== 0) ef.push(`<span class="effect-chip ${socialDelta < 0 ? 'effect-bad' : 'effect-good'}">${socialDelta > 0 ? '+' : ''}${socialDelta} IMPACTO</span>`);
   if (choice.time > 0) ef.push(`<span class="effect-chip effect-warn">-${choice.time}m NO PERCURSO</span>`);
   if (scoreDelta !== 0) ef.push(`<span class="effect-chip ${scoreDelta < 0 ? 'effect-bad' : 'effect-good'}">${scoreDelta > 0 ? '+' : ''}${scoreDelta} PONTOS</span>`);
+  if (choice.badChoice === true) ef.push('<span class="effect-chip effect-bad">+1 ERRO CRITICO</span>');
   document.getElementById('resEffects').innerHTML = ef.join('');
   document.getElementById('resFact').textContent = state.currentEvent.fact;
 
@@ -791,6 +826,10 @@ function makeChoice(idx, choice) {
 
 function continueGame() {
   hide('resultScreen');
+  if (state.wrongChoices >= state.maxWrongChoices) {
+    gameOver();
+    return;
+  }
   if (state.energy <= 0) {
     gameOver();
     return;
@@ -853,7 +892,7 @@ function gameOver() {
     'Você foi erodido pelas decisões impossíveis que o sistema empurra pra você.',
   ];
 
-  document.getElementById('gameOverMsg').textContent = ms[Math.floor(Math.random() * ms.length)];
+  document.getElementById('gameOverMsg').textContent = state.failReason || ms[Math.floor(Math.random() * ms.length)];
 }
 
 function confirmQuit() {
